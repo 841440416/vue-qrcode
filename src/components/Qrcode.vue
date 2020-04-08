@@ -3,18 +3,15 @@
   <div id="posterHtml" :style="{backgroundImage: 'url('+posterHtmlBg+')'}">
     <div>{{posterContent}}</div>
     <!-- 二维码 -->
-    <div class="qrcode">
-      <div id="qrcodeImg"></div>
+    <div class="qrcode" v-if="!posterImg">
+      <canvas id="qrcodeImg"></canvas>
     </div>
-    <div class="flex">
-      <button @click="createQrcode">生成二维码</button>
-      <button @click="createPoster">生成海报</button>
-    </div>
+    <img :src="posterImg" class="poster" />
   </div>
 </template>
 
 <script>
-import QRCode from "qrcodejs2";
+import QRCode from "qrcode";
 import html2canvas from "html2canvas";
 export default {
   name: "Qrcode",
@@ -26,21 +23,46 @@ export default {
       posterImg: "" // 最终生成的海报图片
     };
   },
+
+  mounted() {
+    this.createQrcode(
+      "https://blog.csdn.net/weixin_42890953/article/details/82776760"
+    );
+    this.createPoster();
+  },
+
   methods: {
     /**
      * @desc 生成二维码
      */
     createQrcode(text) {
-      const qrcodeImgEl = document.getElementById("qrcodeImg");
-      qrcodeImgEl.innerHTML = "";
-      let qrcode = new QRCode(qrcodeImgEl, {
-        width: 256,
-        height: 256,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
+      const canvas = document.getElementById("qrcodeImg");
+      QRCode.toCanvas(
+        canvas,
+        text,
+        {
+          errorCorrectionLevel: "H",
+          margin: 1,
+          width: 20,
+          color: {
+            dark: "#010599FF",
+            light: "#FFBF60FF"
+          }
+        },
+        (err, url) => {
+          if (err) console.error(err);
+          // HTMLCanvasElement
+          console.log("QRCode success!" + url);
+        }
+      );
+      QRCode.toDataURL("I am a pony!", function(err, url) {
+        // base64
+        console.log(url);
       });
-      qrcode.makeCode(text);
+      QRCode.toString("I am a pony!", { type: "terminal" }, function(err, url) {
+        // svg
+        console.log(url);
+      });
     },
     /**
      * @desc 生成海报
@@ -59,8 +81,8 @@ export default {
         }
       }).then(function(canvas) {
         // 在微信里,可长按保存或转发
+        vm.posterHtmlBg = "";
         vm.posterImg = canvas.toDataURL("image/png");
-        vm.posterHtmlBg = canvas.toDataURL("image/png");
       });
     }
   }
@@ -72,10 +94,15 @@ export default {
 #posterHtml {
   height: 100vh;
   background-size: 100% 100%;
+  position: relative;
 }
-.flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.qrcode {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+.poster {
+  width: 100vh;
+  height: 100vh;
 }
 </style>
